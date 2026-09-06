@@ -281,7 +281,7 @@ function setSearchTab(tab) {
       "Busca simples: filtre apenas por ano, ordenação, categoria e quantidade mínima de posts.";
 
     $("searchHint").innerHTML =
-      'A ordenação padrão é <strong>do começo do ano para o fim</strong>.';
+      'Ordenação padrão: <strong>do começo do ano para o fim</strong>.';
   } else {
     if (!advancedYears.length) {
       const currentSimpleYear = Number($("year").value);
@@ -295,8 +295,8 @@ function setSearchTab(tab) {
       "Busca avançada: combine vários anos e ordene clicando diretamente nos cabeçalhos da tabela.";
 
     $("searchHint").innerHTML =
-      'Digite o ano no mesmo campo e pressione <strong>Enter</strong> ou <strong>+</strong>. ' +
-      'Na tabela, passe o mouse e clique no <strong>cabeçalho da coluna</strong> para ordenar. Clique novamente para inverter.';
+      'Adicione anos com <strong>Enter</strong> ou <strong>+</strong>. ' +
+      'Clique nos <strong>cabeçalhos da tabela</strong> para ordenar.';
   }
 
   updateSortHeaders();
