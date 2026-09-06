@@ -1393,27 +1393,6 @@ $("prevBtn").addEventListener(
   }
 );
 
-$("openDanbooruBtn").addEventListener(
-  "click",
-  () => {
-    const f = getFilters();
-    const tags =
-      getPostSearchTags(f);
-
-    const url =
-      tags
-        ? "https://danbooru.donmai.us/posts?tags=" +
-          encodeURIComponent(tags)
-        : "https://danbooru.donmai.us/posts";
-
-    window.open(
-      url,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  }
-);
-
 $("csvBtn").addEventListener(
   "click",
   () => {
