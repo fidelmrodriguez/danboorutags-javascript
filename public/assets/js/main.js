@@ -500,6 +500,33 @@ function sortLocalRows(rows,order) {
   return result;
 }
 
+function updatePaginationVisibility() {
+  const pagination = $("pagination");
+
+  if (!pagination) return;
+
+  let show = false;
+
+  if (mode === "local") {
+    show = localRows.length > PAGE_SIZE;
+  } else if (currentRows.length) {
+    const f = getFilters();
+    const hasAnotherSelectedYear =
+      searchTab === "advanced" &&
+      Array.isArray(f.years) &&
+      f.years.length > 1;
+
+    show =
+      currentRows.length >= PAGE_SIZE ||
+      hasAnotherSelectedYear ||
+      pageLabelMode === "last" ||
+      pageLabelMode === "near-last" ||
+      currentPage > 1;
+  }
+
+  pagination.hidden = !show;
+}
+
 function updatePager() {
   if (mode === "local") {
     const total =
@@ -515,6 +542,7 @@ function updatePager() {
     $("prevBtn").disabled = currentPage <= 1;
     $("nextBtn").disabled = currentPage >= total;
     $("lastBtn").disabled = currentPage >= total;
+    updatePaginationVisibility();
     return;
   }
 
@@ -547,6 +575,7 @@ function updatePager() {
     (lastYearId !== null && maxId === lastYearId);
 
   $("nextBtn").disabled = $("lastBtn").disabled;
+  updatePaginationVisibility();
 }
 
 async function queryBoundaryDay(f,day) {
@@ -1181,6 +1210,7 @@ async function loadNumberedDirect(page) {
     Mantemos desabilitado para não recriar o timeout.
   */
   $("lastBtn").disabled = true;
+  updatePaginationVisibility();
 }
 
 async function search() {
@@ -1199,6 +1229,7 @@ async function search() {
   pageLabelMode = "number";
 
   $("error").textContent = "";
+  $("pagination").hidden = true;
   $("searchBtn").disabled = true;
   $("csvBtn").disabled = true;
   $("firstBtn").disabled = true;

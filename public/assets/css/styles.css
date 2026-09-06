@@ -46,11 +46,19 @@
       margin-bottom:16px;
     }
 
+    .tabs-row {
+      display:flex;
+      align-items:flex-end;
+      gap:16px;
+      margin:0 0 16px;
+      border-bottom:1px solid var(--border);
+    }
+
     .tabs {
       display:flex;
       gap:8px;
-      margin:0 0 16px;
-      border-bottom:1px solid var(--border);
+      margin:0;
+      flex:0 0 auto;
     }
 
     .tab-button {
@@ -262,9 +270,9 @@
 
     .tab-description {
       color:var(--muted);
-      margin:0 0 14px;
+      margin:0 0 11px;
       font-size:13px;
-      line-height:1.45;
+      line-height:1.35;
     }
 
     .filters {
@@ -433,6 +441,10 @@
       margin-top:16px;
     }
 
+    .pagination[hidden] {
+      display:none !important;
+    }
+
     .page-status {
       min-width:150px;
       text-align:center;
@@ -440,6 +452,16 @@
     }
 
     @media(max-width:760px) {
+      .tabs-row {
+        align-items:flex-start;
+        flex-direction:column;
+        gap:6px;
+      }
+
+      .tab-description {
+        margin:0 0 10px;
+      }
+
       .actions-row {
         align-items:flex-start;
         flex-direction:column;

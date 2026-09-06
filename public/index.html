@@ -13,19 +13,21 @@
   <h1>danboorutags-javascript</h1>
   <p class="sub">Tags em ordem cronológica: janeiro → dezembro.</p>
 
-  <div class="tabs" role="tablist" aria-label="Tipo de busca">
+  <div class="tabs-row">
+    <div class="tabs" role="tablist" aria-label="Tipo de busca">
     <button id="simpleTab" class="tab-button active" type="button" role="tab" aria-selected="true">
       Busca simples
     </button>
     <button id="advancedTab" class="tab-button" type="button" role="tab" aria-selected="false">
       Busca avançada
     </button>
-  </div>
-
-  <section id="searchPanel" class="panel simple-mode">
+    </div>
     <p id="tabDescription" class="tab-description">
       Busca simples: filtre apenas por ano, ordenação, categoria e quantidade mínima de posts.
     </p>
+  </div>
+
+  <section id="searchPanel" class="panel simple-mode">
     <div class="filters">
       <label id="yearField" class="simple-only">
         Ano
@@ -140,7 +142,7 @@
       </table>
     </div>
 
-    <div class="pagination">
+    <div id="pagination" class="pagination" hidden>
       <button id="firstBtn" disabled>⏮ Primeira</button>
       <button id="prevBtn" disabled>← Anterior</button>
       <span id="pageStatus" class="page-status">Página 1</span>
