@@ -1,5 +1,6 @@
 const TAGS_API = "https://danbooru.donmai.us/tags.json";
 const POSTS_API = "https://danbooru.donmai.us/posts.json";
+const AUTOCOMPLETE_LIMIT = 10;
 const PAGE_SIZE = 100;
 const BOUNDARY_LIMIT = 200;
 
@@ -40,6 +41,35 @@ let lastYearId = null;
 
 let abortController = null;
 
+let searchInProgress = false;
+
+const tagFieldState = {
+  character:{
+    value:"",
+    category:4,
+    wrapperId:"characterAutocomplete",
+    chipId:"characterChip",
+    menuId:"characterSuggestions",
+    label:"Personagem",
+    suggestions:[],
+    activeIndex:-1,
+    controller:null,
+    timer:null
+  },
+  copyright:{
+    value:"",
+    category:3,
+    wrapperId:"copyrightAutocomplete",
+    chipId:"copyrightChip",
+    menuId:"copyrightSuggestions",
+    label:"Anime / franquia / mangá",
+    suggestions:[],
+    activeIndex:-1,
+    controller:null,
+    timer:null
+  }
+};
+
 function normalizeTag(value) {
   return String(value || "").trim().replace(/\s+/g, "_");
 }
@@ -54,14 +84,399 @@ function getFilters() {
   return {
     year:years[0],
     years,
-    character:advanced ? normalizeTag($("character").value) : "",
-    copyright:advanced ? normalizeTag($("copyright").value) : "",
+    character:advanced ? tagFieldState.character.value : "",
+    copyright:advanced ? tagFieldState.copyright.value : "",
     category:$("category").value,
     minPosts:Math.max(0,Number($("minPosts").value || 0)),
     order:advanced ? "date_asc" : $("order").value,
     maxPosts:advanced ? Number($("maxPosts").value) : 1000,
     deprecated:advanced ? $("deprecated").value : ""
   };
+}
+
+function escapeSelectorValue(value) {
+  return String(value).replaceAll('"','\\"');
+}
+
+function hasUncommittedTagText(fieldId) {
+  const state = tagFieldState[fieldId];
+
+  return (
+    !state.value &&
+    String($(fieldId).value || "").trim() !== ""
+  );
+}
+
+function hasInvalidTagDraft() {
+  return (
+    hasUncommittedTagText("character") ||
+    hasUncommittedTagText("copyright")
+  );
+}
+
+function updateSearchButtonState() {
+  $("searchBtn").disabled =
+    searchInProgress ||
+    hasInvalidTagDraft();
+}
+
+function hideTagSuggestions(fieldId) {
+  const state = tagFieldState[fieldId];
+  const menu = $(state.menuId);
+
+  state.activeIndex = -1;
+  menu.hidden = true;
+  $(fieldId).setAttribute("aria-expanded","false");
+}
+
+function renderTagChip(fieldId) {
+  const state = tagFieldState[fieldId];
+  const wrapper = $(state.wrapperId);
+  const chip = $(state.chipId);
+  const input = $(fieldId);
+
+  if (!state.value) {
+    wrapper.classList.remove("has-value");
+    chip.innerHTML = "";
+    input.disabled = false;
+    updateSearchButtonState();
+    return;
+  }
+
+  wrapper.classList.add("has-value");
+  input.value = "";
+  input.disabled = true;
+
+  chip.innerHTML = `
+    <span class="tag-chip">
+      <span class="tag-chip-name">${escapeHtml(state.value)}</span>
+      <button
+        type="button"
+        data-remove-tag="${fieldId}"
+        title="Remover ${escapeHtml(state.value)}"
+        aria-label="Remover ${escapeHtml(state.value)}"
+      >×</button>
+    </span>
+  `;
+
+  chip
+    .querySelector("[data-remove-tag]")
+    .addEventListener("click", () => {
+      state.value = "";
+      state.suggestions = [];
+      renderTagChip(fieldId);
+      hideTagSuggestions(fieldId);
+      $("error").textContent = "";
+      input.focus();
+    });
+
+  updateSearchButtonState();
+}
+
+function selectTagSuggestion(fieldId,tag) {
+  const state = tagFieldState[fieldId];
+
+  state.value = String(tag.name || "").trim();
+  state.suggestions = [];
+  $("error").textContent = "";
+  renderTagChip(fieldId);
+  hideTagSuggestions(fieldId);
+}
+
+function renderTagSuggestions(fieldId,rows) {
+  const state = tagFieldState[fieldId];
+  const menu = $(state.menuId);
+
+  state.suggestions = rows;
+  state.activeIndex = -1;
+
+  if (!rows.length) {
+    menu.innerHTML =
+      '<div class="tag-autocomplete-empty">Nenhuma tag encontrada.</div>';
+    menu.hidden = false;
+    $(fieldId).setAttribute("aria-expanded","true");
+    return;
+  }
+
+  menu.innerHTML = rows.map((tag,index) => `
+    <button
+      type="button"
+      class="tag-autocomplete-option"
+      role="option"
+      data-tag-index="${index}"
+      aria-selected="false"
+    >
+      <span class="tag-autocomplete-option-name">${escapeHtml(tag.name)}</span>
+      <span class="tag-autocomplete-option-count">${Number(tag.post_count || 0).toLocaleString("pt-BR")} posts</span>
+    </button>
+  `).join("");
+
+  menu.querySelectorAll("[data-tag-index]").forEach(button => {
+    button.addEventListener("mousedown", event => {
+      event.preventDefault();
+    });
+
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.tagIndex);
+      const tag = state.suggestions[index];
+
+      if (tag) {
+        selectTagSuggestion(fieldId,tag);
+      }
+    });
+  });
+
+  menu.hidden = false;
+  $(fieldId).setAttribute("aria-expanded","true");
+}
+
+function updateActiveTagSuggestion(fieldId,nextIndex) {
+  const state = tagFieldState[fieldId];
+  const menu = $(state.menuId);
+  const buttons = [...menu.querySelectorAll("[data-tag-index]")];
+
+  if (!buttons.length) return;
+
+  state.activeIndex =
+    (nextIndex + buttons.length) % buttons.length;
+
+  buttons.forEach((button,index) => {
+    const active = index === state.activeIndex;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-selected",String(active));
+  });
+
+  buttons[state.activeIndex].scrollIntoView({
+    block:"nearest"
+  });
+}
+
+async function fetchTagSuggestions(fieldId,query) {
+  const state = tagFieldState[fieldId];
+
+  if (state.controller) {
+    state.controller.abort();
+  }
+
+  state.controller = new AbortController();
+
+  const params = new URLSearchParams();
+  params.set(
+    "search[name_matches]",
+    `${normalizeTag(query)}*`
+  );
+  params.set("search[category]",String(state.category));
+  params.set("search[order]","count");
+  params.set("limit",String(AUTOCOMPLETE_LIMIT));
+
+  const response = await fetch(
+    TAGS_API + "?" + params.toString(),
+    {
+      headers:{"Accept":"application/json"},
+      signal:state.controller.signal
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Danbooru respondeu HTTP ${response.status} ao buscar sugestões.`
+    );
+  }
+
+  const data = await response.json();
+
+  return Array.isArray(data)
+    ? data.filter(tag =>
+        Number(tag.category) === state.category &&
+        String(tag.name || "").trim() !== ""
+      )
+    : [];
+}
+
+async function validateExactTag(fieldId) {
+  const state = tagFieldState[fieldId];
+  const input = $(fieldId);
+  const normalized = normalizeTag(input.value);
+
+  if (!normalized) {
+    hideTagSuggestions(fieldId);
+    return false;
+  }
+
+  if (state.controller) {
+    state.controller.abort();
+  }
+
+  state.controller = new AbortController();
+
+  const params = new URLSearchParams();
+  params.set("search[name_matches]",normalized);
+  params.set("search[category]",String(state.category));
+  params.set("limit","20");
+
+  try {
+    const response = await fetch(
+      TAGS_API + "?" + params.toString(),
+      {
+        headers:{"Accept":"application/json"},
+        signal:state.controller.signal
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Danbooru respondeu HTTP ${response.status} ao validar a tag.`
+      );
+    }
+
+    const data = await response.json();
+    const exact = Array.isArray(data)
+      ? data.find(tag =>
+          Number(tag.category) === state.category &&
+          String(tag.name || "") === normalized
+        )
+      : null;
+
+    if (!exact) {
+      $("error").textContent =
+        `${state.label}: "${normalized}" não é uma tag válida dessa categoria no Danbooru.`;
+      updateSearchButtonState();
+      return false;
+    }
+
+    selectTagSuggestion(fieldId,exact);
+    return true;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      return false;
+    }
+
+    $("error").textContent = error.message;
+    updateSearchButtonState();
+    return false;
+  }
+}
+
+function scheduleTagSuggestions(fieldId) {
+  const state = tagFieldState[fieldId];
+  const input = $(fieldId);
+  const query = String(input.value || "").trim();
+
+  clearTimeout(state.timer);
+
+  if (!query || state.value) {
+    state.suggestions = [];
+    hideTagSuggestions(fieldId);
+    updateSearchButtonState();
+    return;
+  }
+
+  updateSearchButtonState();
+
+  state.timer = setTimeout(async () => {
+    try {
+      const rows = await fetchTagSuggestions(fieldId,query);
+
+      if (
+        String(input.value || "").trim() !== query ||
+        state.value
+      ) {
+        return;
+      }
+
+      renderTagSuggestions(fieldId,rows);
+    } catch (error) {
+      if (error.name === "AbortError") return;
+
+      hideTagSuggestions(fieldId);
+      $("error").textContent = error.message;
+    }
+  },250);
+}
+
+function setupTagAutocomplete(fieldId) {
+  const state = tagFieldState[fieldId];
+  const input = $(fieldId);
+
+  input.addEventListener("input", () => {
+    state.value = "";
+    $("error").textContent = "";
+    scheduleTagSuggestions(fieldId);
+  });
+
+  input.addEventListener("focus", () => {
+    if (
+      !state.value &&
+      String(input.value || "").trim()
+    ) {
+      scheduleTagSuggestions(fieldId);
+    }
+  });
+
+  input.addEventListener("blur", () => {
+    setTimeout(
+      () => hideTagSuggestions(fieldId),
+      120
+    );
+  });
+
+  input.addEventListener("keydown", async event => {
+    const menu = $(state.menuId);
+    const hasSuggestions =
+      !menu.hidden &&
+      state.suggestions.length > 0;
+
+    if (event.key === "ArrowDown" && hasSuggestions) {
+      event.preventDefault();
+      updateActiveTagSuggestion(
+        fieldId,
+        state.activeIndex + 1
+      );
+      return;
+    }
+
+    if (event.key === "ArrowUp" && hasSuggestions) {
+      event.preventDefault();
+      updateActiveTagSuggestion(
+        fieldId,
+        state.activeIndex <= 0
+          ? state.suggestions.length - 1
+          : state.activeIndex - 1
+      );
+      return;
+    }
+
+    if (event.key === "Escape") {
+      hideTagSuggestions(fieldId);
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      if (
+        hasSuggestions &&
+        state.activeIndex >= 0
+      ) {
+        selectTagSuggestion(
+          fieldId,
+          state.suggestions[state.activeIndex]
+        );
+        return;
+      }
+
+      await validateExactTag(fieldId);
+    }
+  });
+
+  $(state.wrapperId).addEventListener("click", event => {
+    if (
+      !event.target.closest("button") &&
+      !state.value
+    ) {
+      input.focus();
+    }
+  });
 }
 
 function renderYearChips() {
@@ -303,6 +718,12 @@ function setSearchTab(tab) {
 }
 
 function validateFilters(f) {
+  if (hasInvalidTagDraft()) {
+    throw new Error(
+      "Selecione uma sugestão válida do Danbooru ou apague o texto dos campos Personagem / Anime / franquia / mangá."
+    );
+  }
+
   if (!Array.isArray(f.years) || !f.years.length) {
     throw new Error("Adicione pelo menos um ano à pesquisa.");
   }
@@ -1232,7 +1653,8 @@ async function search() {
 
   $("error").textContent = "";
   $("pagination").hidden = true;
-  $("searchBtn").disabled = true;
+  searchInProgress = true;
+  updateSearchButtonState();
   $("csvBtn").disabled = true;
   $("firstBtn").disabled = true;
   $("prevBtn").disabled = true;
@@ -1276,7 +1698,8 @@ async function search() {
       error.message +
       "\n\nA busca foi interrompida sem tentar páginas altas do Danbooru.";
   } finally {
-    $("searchBtn").disabled = false;
+    searchInProgress = false;
+    updateSearchButtonState();
   }
 }
 
@@ -1303,7 +1726,13 @@ document.querySelectorAll(".sort-button").forEach(button => {
 });
 
 $("simpleTab").addEventListener("click", () => {
-  advancedYears = [Number($("year").value) || 2025];
+  setupTagAutocomplete("character");
+setupTagAutocomplete("copyright");
+renderTagChip("character");
+renderTagChip("copyright");
+updateSearchButtonState();
+
+advancedYears = [Number($("year").value) || 2025];
 renderYearChips();
 setSearchTab("simple");
 updateSortHeaders();
@@ -1493,8 +1922,6 @@ $("csvBtn").addEventListener(
 
 for (const id of [
   "year",
-  "character",
-  "copyright",
   "category",
   "minPosts",
   "order",

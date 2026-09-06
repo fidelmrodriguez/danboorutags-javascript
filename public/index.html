@@ -45,12 +45,50 @@
 
       <label id="characterField" class="advanced-only">
         Personagem
-        <input id="character" type="text" placeholder="ex: hatsune_miku">
+        <div id="characterAutocomplete" class="tag-autocomplete">
+          <div class="tag-autocomplete-shell">
+            <div id="characterChip" class="tag-chip-slot"></div>
+            <input
+              id="character"
+              type="text"
+              placeholder="ex: hatsune_miku"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="characterSuggestions"
+              aria-expanded="false"
+            >
+          </div>
+          <div
+            id="characterSuggestions"
+            class="tag-autocomplete-menu"
+            role="listbox"
+            hidden
+          ></div>
+        </div>
       </label>
 
       <label id="copyrightField" class="advanced-only">
         Anime / franquia / mangá
-        <input id="copyright" type="text" placeholder="ex: vocaloid">
+        <div id="copyrightAutocomplete" class="tag-autocomplete">
+          <div class="tag-autocomplete-shell">
+            <div id="copyrightChip" class="tag-chip-slot"></div>
+            <input
+              id="copyright"
+              type="text"
+              placeholder="ex: vocaloid"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="copyrightSuggestions"
+              aria-expanded="false"
+            >
+          </div>
+          <div
+            id="copyrightSuggestions"
+            class="tag-autocomplete-menu"
+            role="listbox"
+            hidden
+          ></div>
+        </div>
       </label>
 
       <label id="categoryField">
