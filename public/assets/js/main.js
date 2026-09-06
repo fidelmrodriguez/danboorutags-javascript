@@ -449,17 +449,19 @@ function renderRows(rows) {
           ${deprecated ? "deprecated" : "ativa"}
         </td>
         <td data-label="Links">
-          <a
-            href="https://danbooru.donmai.us/tags/${tag.id}"
-            target="_blank"
-            rel="noopener"
-          >tag</a>
-          ·
-          <a
-            href="https://danbooru.donmai.us/wiki_pages/${encoded}"
-            target="_blank"
-            rel="noopener"
-          >wiki</a>
+          <span class="card-links">
+            <a
+              href="https://danbooru.donmai.us/tags/${tag.id}"
+              target="_blank"
+              rel="noopener"
+            >tag</a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="https://danbooru.donmai.us/wiki_pages/${encoded}"
+              target="_blank"
+              rel="noopener"
+            >wiki</a>
+          </span>
         </td>
       </tr>
     `;

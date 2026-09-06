@@ -529,6 +529,17 @@
         text-align:right;
       }
 
+      tbody td[data-label="Links"] {
+        align-items:center;
+      }
+
+      .card-links {
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        white-space:nowrap;
+      }
+
       tbody td[colspan] {
         display:block;
         padding:18px 14px;
