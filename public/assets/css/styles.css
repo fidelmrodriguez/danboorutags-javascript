@@ -452,6 +452,95 @@
     }
 
     @media(max-width:760px) {
+      .table-wrap {
+        overflow:visible;
+        border:0;
+        border-radius:0;
+      }
+
+      table {
+        display:block;
+        min-width:0;
+      }
+
+      thead {
+        display:none;
+      }
+
+      tbody {
+        display:grid;
+        gap:12px;
+      }
+
+      tbody tr {
+        display:flex;
+        flex-direction:column;
+        overflow:hidden;
+        border:1px solid var(--border);
+        border-radius:10px;
+        background:var(--panel2);
+      }
+
+      tbody tr:hover {
+        background:var(--panel2);
+      }
+
+      tbody td {
+        width:100%;
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:16px;
+        padding:10px 12px;
+        border-bottom:1px solid var(--border);
+        text-align:right;
+        overflow-wrap:anywhere;
+      }
+
+      tbody td:last-child {
+        border-bottom:0;
+      }
+
+      tbody td::before {
+        content:attr(data-label);
+        flex:0 0 auto;
+        color:var(--muted);
+        font-size:11px;
+        font-weight:bold;
+        line-height:1.4;
+        text-align:left;
+        text-transform:uppercase;
+      }
+
+      tbody td.tag {
+        order:-1;
+        align-items:center;
+        background:#202630;
+        font-size:15px;
+      }
+
+      tbody td.tag a {
+        min-width:0;
+        text-align:right;
+        overflow-wrap:anywhere;
+      }
+
+      tbody td.num {
+        text-align:right;
+      }
+
+      tbody td[colspan] {
+        display:block;
+        padding:18px 14px;
+        border-bottom:0;
+        color:var(--muted);
+        text-align:center;
+      }
+
+      tbody td[colspan]::before {
+        display:none;
+      }
+
       .tabs-row {
         align-items:flex-start;
         flex-direction:column;

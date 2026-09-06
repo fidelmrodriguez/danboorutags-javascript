@@ -429,26 +429,26 @@ function renderRows(rows) {
 
     return `
       <tr>
-        <td>${escapeHtml(tag.id)}</td>
-        <td class="tag">
+        <td data-label="ID">${escapeHtml(tag.id)}</td>
+        <td class="tag" data-label="Tag">
           <a
             href="https://danbooru.donmai.us/posts?tags=${encoded}"
             target="_blank"
             rel="noopener"
           >${escapeHtml(name)}</a>
         </td>
-        <td>${escapeHtml(categoryName(tag.category))}</td>
-        <td class="num">
+        <td data-label="Categoria">${escapeHtml(categoryName(tag.category))}</td>
+        <td class="num" data-label="Posts">
           ${Number(tag.post_count || 0).toLocaleString("pt-BR")}
         </td>
-        <td class="num">
+        <td class="num" data-label="Ocorrências no filtro">
           ${Number(tag.association_count || 0).toLocaleString("pt-BR")}
         </td>
-        <td>${escapeHtml(formatDate(tag.created_at))}</td>
-        <td class="${deprecated ? "bad" : "ok"}">
+        <td data-label="Criada em">${escapeHtml(formatDate(tag.created_at))}</td>
+        <td class="${deprecated ? "bad" : "ok"}" data-label="Status">
           ${deprecated ? "deprecated" : "ativa"}
         </td>
-        <td>
+        <td data-label="Links">
           <a
             href="https://danbooru.donmai.us/tags/${tag.id}"
             target="_blank"
