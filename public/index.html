@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>danboorutags-javascript</title>
+  <meta name="description" content="Explore tags do Danbooru por ano, categoria, personagem e franquia usando JavaScript puro.">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+<main class="container">
+  <h1>danboorutags-javascript</h1>
+  <p class="sub">Tags em ordem cronológica: janeiro → dezembro.</p>
+
+  <div class="tabs" role="tablist" aria-label="Tipo de busca">
+    <button id="simpleTab" class="tab-button active" type="button" role="tab" aria-selected="true">
+      Busca simples
+    </button>
+    <button id="advancedTab" class="tab-button" type="button" role="tab" aria-selected="false">
+      Busca avançada
+    </button>
+  </div>
+
+  <section id="searchPanel" class="panel simple-mode">
+    <p id="tabDescription" class="tab-description">
+      Busca simples: filtre apenas por ano, ordenação, categoria e quantidade mínima de posts.
+    </p>
+    <div class="filters">
+      <label id="yearField" class="simple-only">
+        Ano
+        <input id="year" type="number" min="2005" max="2100" value="2025">
+      </label>
+
+      <label id="advancedYearsField" class="advanced-only advanced-years-field">
+        Anos
+        <div id="yearInputShell" class="year-input-shell">
+          <div id="yearChips" class="year-chips"></div>
+          <input id="advancedYearInput" type="number" min="2005" max="2100" placeholder="Digite um ano">
+          <button id="addYearBtn" type="button" title="Adicionar ano" aria-label="Adicionar ano">+</button>
+        </div>
+      </label>
+
+      <label id="characterField" class="advanced-only">
+        Personagem
+        <input id="character" type="text" placeholder="ex: hatsune_miku">
+      </label>
+
+      <label id="copyrightField" class="advanced-only">
+        Anime / franquia / mangá
+        <input id="copyright" type="text" placeholder="ex: vocaloid">
+      </label>
+
+      <label id="categoryField">
+        Categoria das tags
+        <select id="category">
+          <option value="">Todas</option>
+          <option value="0">General</option>
+          <option value="1">Artist</option>
+          <option value="3">Copyright</option>
+          <option value="4" selected>Character</option>
+          <option value="5">Meta</option>
+        </select>
+      </label>
+
+      <label id="minPostsField">
+        Posts mínimos da tag
+        <input id="minPosts" type="number" min="0" value="1">
+      </label>
+
+      <label id="orderField" class="simple-only">
+        Ordenação
+        <select id="order">
+          <option value="date_asc" selected>Data: janeiro → dezembro</option>
+          <option value="count">Mais usada</option>
+          <option id="associationOrderOption" value="association">Mais frequente no filtro</option>
+          <option value="name">Nome</option>
+        </select>
+      </label>
+
+      <label id="maxPostsField" class="advanced-only">
+        Posts para analisar
+        <select id="maxPosts">
+          <option value="200">200</option>
+          <option value="500">500</option>
+          <option value="1000" selected>1.000</option>
+          <option value="2000">2.000</option>
+          <option value="5000">5.000</option>
+        </select>
+      </label>
+
+      <label id="deprecatedField" class="advanced-only">
+        Deprecated
+        <select id="deprecated">
+          <option value="">Mostrar todas</option>
+          <option value="false" selected>Ocultar</option>
+          <option value="true">Somente deprecated</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button id="searchBtn" class="primary">Buscar tags</button>
+      <button id="csvBtn" disabled>Exportar CSV</button>
+      <button id="openDanbooruBtn" class="advanced-only">Abrir posts no Danbooru</button>
+    </div>
+
+    <div id="searchHint" class="hint">
+      A ordenação padrão é <strong>do começo do ano para o fim</strong>.
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="status-row">
+      <span id="status">Pronto.</span>
+      <span id="scanInfo"></span>
+    </div>
+
+    <div id="progress" class="progress"><div id="progressBar"></div></div>
+    <div id="error"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+        <tr>
+          <th data-sort="id"><button type="button" class="sort-button" data-sort-key="id"><span>ID</span><span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th data-sort="name"><button type="button" class="sort-button" data-sort-key="name"><span>Tag</span><span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th data-sort="category"><button type="button" class="sort-button" data-sort-key="category"><span>Categoria</span><span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th class="num" data-sort="post_count"><button type="button" class="sort-button" data-sort-key="post_count"><span>Posts</span><span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th class="num" data-sort="association_count"><button type="button" class="sort-button" data-sort-key="association_count"><span>Ocorrências no filtro</span><span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th data-sort="created_at"><button type="button" class="sort-button" data-sort-key="created_at"><span>Criada em</span><span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th data-sort="is_deprecated"><button type="button" class="sort-button" data-sort-key="is_deprecated"><span>Status</span><span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th>Links</th>
+        </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="8">Clique em "Buscar tags".</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button id="firstBtn" disabled>⏮ Primeira</button>
+      <button id="prevBtn" disabled>← Anterior</button>
+      <span id="pageStatus" class="page-status">Página 1</span>
+      <button id="nextBtn" disabled>Próxima →</button>
+      <button id="lastBtn" disabled>Última ⏭</button>
+    </div>
+  </section>
+</main>
+  <script src="./assets/js/main.js"></script>
+</body>
+</html>
