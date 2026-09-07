@@ -441,6 +441,14 @@
     }
 
     @media(min-width:761px) and (max-width:1350px) {
+      th[data-sort="association_count"] {
+        min-width:178px;
+      }
+
+      th[data-sort="association_count"] .sort-button span:first-child {
+        white-space:nowrap;
+      }
+
       th[data-sort="created_at"],
       td[data-label="Criada em"] {
         min-width:136px;
