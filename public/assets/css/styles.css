@@ -441,23 +441,67 @@
     }
 
     @media(min-width:761px) and (max-width:1350px) {
-      th[data-sort="association_count"] {
-        min-width:178px;
+      body.advanced-search .table-wrap {
+        overflow-x:hidden;
       }
 
-      th[data-sort="association_count"] .sort-button span:first-child {
+      body.advanced-search table {
+        min-width:0;
+        table-layout:fixed;
+      }
+
+      body.advanced-search th:nth-child(1),
+      body.advanced-search td:nth-child(1) {
+        width:78px;
+      }
+
+      body.advanced-search th:nth-child(3),
+      body.advanced-search td:nth-child(3) {
+        width:112px;
+      }
+
+      body.advanced-search th:nth-child(4),
+      body.advanced-search td:nth-child(4) {
+        width:72px;
+      }
+
+      body.advanced-search th[data-sort="association_count"],
+      body.advanced-search td:nth-child(5) {
+        width:180px;
+      }
+
+      body.advanced-search th[data-sort="association_count"] .sort-button span:first-child {
         white-space:nowrap;
       }
 
-      th[data-sort="created_at"],
-      td[data-label="Criada em"] {
-        min-width:136px;
+      body.advanced-search th[data-sort="created_at"],
+      body.advanced-search td[data-label="Criada em"] {
+        width:140px;
+        min-width:0;
+        white-space:nowrap;
       }
 
-      th:last-child,
-      td[data-label="Links"] {
-        min-width:76px;
+      body.advanced-search th:nth-child(7),
+      body.advanced-search td:nth-child(7) {
+        width:82px;
+      }
+
+      body.advanced-search th:last-child,
+      body.advanced-search td[data-label="Links"] {
+        width:82px;
+        min-width:0;
         white-space:nowrap;
+      }
+
+      body.advanced-search th[data-sort] .sort-button {
+        min-width:0;
+        padding-left:8px;
+        padding-right:8px;
+      }
+
+      body.advanced-search td.tag {
+        min-width:0;
+        overflow-wrap:anywhere;
       }
     }
 
