@@ -429,6 +429,17 @@
       font-family:Consolas,monospace;
     }
 
+    td[data-label="Criada em"],
+    td[data-label="Links"],
+    .card-links {
+      white-space:nowrap;
+    }
+
+    th[data-sort="created_at"] .sort-button,
+    th:last-child {
+      white-space:nowrap;
+    }
+
     .ok { color:var(--ok); }
     .bad { color:var(--danger); }
 
