@@ -1,5 +1,12 @@
 [build]
   publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/danbooru/*"
+  to = "/.netlify/functions/danbooru/:splat"
+  status = 200
+  force = true
 
 [[headers]]
   for = "/*"

@@ -1,6 +1,6 @@
 # Deploy no GitHub + Netlify
 
-Este projeto é totalmente estático. Não existe `npm install`, compilação, framework ou etapa de build.
+Este projeto não usa framework, `npm install` nem etapa de compilação. O front-end fica em `public/` e uma Netlify Function em `netlify/functions/danbooru.js` faz o proxy das consultas ao Danbooru para evitar CORS.
 
 ## 1. Criar o repositório no GitHub
 
@@ -41,10 +41,19 @@ O arquivo `netlify.toml` já define:
 
 ```txt
 Publish directory: public
+Functions directory: netlify/functions
 Build command: nenhum
 ```
 
-Não é necessário configurar variáveis de ambiente.
+Não é obrigatório configurar variáveis de ambiente para consultas públicas. Para autenticar o proxy no Danbooru, configure opcionalmente em **Site configuration → Environment variables**:
+
+```txt
+DANBOORU_LOGIN=seu_login
+DANBOORU_API_KEY=sua_api_key
+DANBOORU_USER_ID=seu_id_numerico
+```
+
+Esses valores ficam somente na Function e não aparecem no JavaScript entregue ao navegador.
 
 ## 4. Definir o endereço do site
 
@@ -96,6 +105,7 @@ Após publicar:
 4. Teste a ordenação pelos cabeçalhos da tabela.
 5. Teste `Primeira`, `Anterior`, `Próxima` e `Última`.
 6. Teste a exportação CSV.
-7. Abra o DevTools e confirme que não existem erros de carregamento de `styles.css` ou `main.js`.
+7. Abra o DevTools e confirme que as consultas vão para `/api/danbooru/tags.json` ou `/api/danbooru/posts.json`, e não diretamente para `https://danbooru.donmai.us/...`.
+8. Confirme que não há erros de CORS no console.
 
-Erros HTTP retornados pelo próprio Danbooru podem ocorrer em consultas muito pesadas e não significam necessariamente falha do deploy do Netlify.
+Se o Danbooru/Cloudflare responder 403 também para a Function, configure as variáveis opcionais de autenticação acima e faça um novo deploy.

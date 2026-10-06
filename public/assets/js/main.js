@@ -1,5 +1,5 @@
-const TAGS_API = "https://danbooru.donmai.us/tags.json";
-const POSTS_API = "https://danbooru.donmai.us/posts.json";
+const TAGS_API = "/api/danbooru/tags.json";
+const POSTS_API = "/api/danbooru/posts.json";
 const PAGE_SIZE = 100;
 const BOUNDARY_LIMIT = 200;
 
@@ -402,11 +402,20 @@ async function fetchJson(url) {
 
   if (!response.ok) {
     const body = await response.text().catch(()=>"");
+    let message =
+      `Danbooru respondeu HTTP ${response.status} ${response.statusText}`.trim();
 
-    throw new Error(
-      `Danbooru respondeu HTTP ${response.status} ${response.statusText}` +
-      (body ? "\n" + body.slice(0,500) : "")
-    );
+    if (body) {
+      try {
+        const payload = JSON.parse(body);
+        const details = payload.details ? `\n${payload.details}` : "";
+        message = `${payload.error || message}${details}`;
+      } catch (_) {
+        message += "\n" + body.slice(0,500);
+      }
+    }
+
+    throw new Error(message);
   }
 
   return response.json();

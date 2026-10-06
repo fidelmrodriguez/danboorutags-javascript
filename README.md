@@ -1,6 +1,6 @@
 # danboorutags-javascript
 
-Aplicação web estática para explorar tags do Danbooru por ano de criação, categoria e contexto de posts. O projeto foi desenvolvido com JavaScript, HTML e CSS puros, sem framework, sem SPA, sem bundler e sem etapa de build.
+Aplicação web para explorar tags do Danbooru por ano de criação, categoria e contexto de posts. A interface usa JavaScript, HTML e CSS puros, sem framework, SPA, bundler ou etapa de build; uma Netlify Function faz o proxy seguro das consultas à API.
 
 ## Netlify
 
@@ -19,7 +19,7 @@ https://danboorutags-javascript.netlify.app/
 * Exportação dos resultados em CSV.
 * Links diretos para a tag, wiki e posts correspondentes no Danbooru.
 * Layout responsivo para desktop e telas menores.
-* Nenhum dado é persistido: as consultas são feitas diretamente do navegador para a API pública do Danbooru.
+* Nenhum dado é persistido: o navegador consulta uma Netlify Function no próprio domínio, e essa função encaminha somente requisições de leitura para `tags.json` e `posts.json` do Danbooru. Isso evita o bloqueio de CORS no navegador e permite enviar um `User-Agent` adequado ao upstream.
 
 ## Stack
 
@@ -27,6 +27,7 @@ https://danboorutags-javascript.netlify.app/
 * HTML5
 * CSS3
 * Fetch API
+* Netlify Functions
 * Danbooru API
 * Netlify para hospedagem estática
 
@@ -34,6 +35,9 @@ https://danboorutags-javascript.netlify.app/
 
 ```txt
 danboorutags-javascript/
+├── netlify/
+│   └── functions/
+│       └── danbooru.js
 ├── public/
 │   ├── assets/
 │   │   ├── css/
@@ -41,20 +45,17 @@ danboorutags-javascript/
 │   │   └── js/
 │   │       └── main.js
 │   └── index.html
-├── .editorconfig
-├── .gitattributes
-├── .gitignore
 ├── DEPLOY_NETLIFY.md
 ├── LICENSE
 ├── netlify.toml
 └── README.md
 ```
 
-O HTML concentra apenas a estrutura da página. A apresentação fica em `public/assets/css/styles.css` e toda a lógica de filtros, chamadas à API, paginação, ordenação e exportação fica em `public/assets/js/main.js`.
+O HTML concentra a estrutura da página. A apresentação fica em `public/assets/css/styles.css`; filtros, paginação, ordenação e exportação ficam em `public/assets/js/main.js`. O acesso externo ao Danbooru é isolado em `netlify/functions/danbooru.js`.
 
 ## Como funciona
 
-A aplicação consulta os endpoints públicos do Danbooru diretamente pelo navegador.
+O navegador consulta rotas locais `/api/danbooru/tags.json` e `/api/danbooru/posts.json`. O `netlify.toml` reescreve essas rotas para a Netlify Function, que então consulta os endpoints públicos do Danbooru no servidor.
 
 ### Busca simples
 
@@ -85,40 +86,27 @@ Nesse cenário, a aplicação analisa até 1.000 posts contendo as tags informad
 
 ## Executar localmente
 
-Não existe instalação de dependências.
-
-Clone o repositório:
+O projeto não possui dependências npm próprias. Para testar o fluxo completo (interface + Function), use o Netlify Dev:
 
 ```bash
 git clone <url-do-repositorio>
 cd danboorutags-javascript
+npx netlify dev
 ```
 
-Depois sirva a pasta `public` por HTTP. Com Python:
-
-```bash
-python -m http.server 8080 -d public
-```
-
-Acesse:
-
-```txt
-http://localhost:8080
-```
-
-Também é possível usar extensões como Live Server no VS Code.
-
-> Evite depender de `file://` para testar a aplicação. Servir os arquivos por HTTP reproduz melhor o comportamento do deploy e evita diferenças de segurança entre navegadores.
+Abra a URL local mostrada pelo Netlify CLI. Um servidor estático simples, como `python -m http.server`, serve a interface, mas não executa `/api/danbooru/*` e portanto não permite testar as consultas.
 
 ## Deploy
 
-O projeto já inclui `netlify.toml` e não precisa de etapa de build.
+O projeto já inclui `netlify.toml` e não precisa de etapa de build. O Netlify publica `public/` e também disponibiliza a função `netlify/functions/danbooru.js`.
 
 O passo a passo completo está em [`DEPLOY_NETLIFY.md`](./DEPLOY_NETLIFY.md).
 
 ## API e limitações
 
 * O projeto depende da disponibilidade da API pública do Danbooru.
+* As chamadas do navegador usam `/api/danbooru/*`, uma rota same-origin atendida por uma Netlify Function, evitando CORS entre o site e o Danbooru.
+* A Function envia um `User-Agent` identificável. Opcionalmente, podem ser definidas no Netlify as variáveis `DANBOORU_LOGIN`, `DANBOORU_API_KEY` e `DANBOORU_USER_ID`; as credenciais ficam somente no servidor e nunca são enviadas ao navegador.
 * Consultas muito amplas podem sofrer rate limit ou timeout no servidor do Danbooru.
 * A paginação cronológica usa cursores/IDs para reduzir consultas caras com offsets altos.
 * A busca contextual lê apenas a quantidade de posts definida em `Posts para analisar`; portanto, tags raras podem não aparecer quando o limite for baixo.
@@ -128,8 +116,8 @@ O passo a passo completo está em [`DEPLOY_NETLIFY.md`](./DEPLOY_NETLIFY.md).
 
 * JavaScript puro foi mantido de propósito: a interface não exige um framework ou uma SPA.
 * CSS e JavaScript foram separados do HTML para facilitar manutenção e revisão de código.
-* Não há dependências de produção ou pipeline de build, reduzindo superfície de manutenção e tornando o deploy totalmente estático.
-* A aplicação trata a API do Danbooru como uma dependência externa e mantém a lógica de apresentação no navegador.
+* Não há dependências npm de produção nem pipeline de build; o único componente de servidor é uma Netlify Function pequena e sem pacotes externos.
+* A aplicação mantém a lógica de apresentação no navegador e isola o acesso ao Danbooru no proxy server-side para evitar CORS e não expor credenciais opcionais.
 
 ## Aviso
 
